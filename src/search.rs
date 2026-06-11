@@ -23,6 +23,7 @@ pub struct SearchConfig {
     pub globs: Vec<String>,
     pub file_types: Vec<String>,
     pub type_not: Vec<String>,
+    pub max_count: Option<usize>,
 }
 
 impl Default for SearchConfig {
@@ -40,6 +41,7 @@ impl Default for SearchConfig {
             globs: Vec::new(),
             file_types: Vec::new(),
             type_not: Vec::new(),
+            max_count: None,
         }
     }
 }
@@ -91,6 +93,7 @@ pub fn search_paths(
                     continue;
                 }
             };
+            let results = apply_max_count(results, mode, config.max_count);
             any_matches |= print_results(
                 &mut printer,
                 &results,
@@ -145,6 +148,7 @@ pub fn search_paths(
                         continue;
                     }
                 };
+                let results = apply_max_count(results, mode, config.max_count);
                 any_matches |= print_results(
                     &mut printer,
                     &results,
@@ -254,6 +258,30 @@ fn search_file(
                     .collect())
             }
         }
+    }
+}
+
+fn apply_max_count(
+    mut results: Vec<SearchMatch>,
+    mode: &SearchMode,
+    max_count: Option<usize>,
+) -> Vec<SearchMatch> {
+    match (mode, max_count) {
+        (SearchMode::Semantic { .. }, Some(k)) => {
+            results.sort_by(|a, b| {
+                b.similarity
+                    .partial_cmp(&a.similarity)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+            results.truncate(k);
+            results.sort_by_key(|m| m.line_number);
+            results
+        }
+        (_, Some(k)) => {
+            results.truncate(k);
+            results
+        }
+        _ => results,
     }
 }
 

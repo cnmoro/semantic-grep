@@ -108,6 +108,10 @@ pub struct Cli {
     #[arg(short = 'o', long = "only-matching")]
     pub only_matching: bool,
 
+    /// Show at most N matching lines (sorted by similarity descending in semantic mode)
+    #[arg(short = 'k', long = "max-count", value_name = "N")]
+    pub max_count: Option<usize>,
+
     /// Print help
     #[arg(long = "help")]
     pub help: bool,

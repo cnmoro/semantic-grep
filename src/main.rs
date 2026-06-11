@@ -82,6 +82,7 @@ semantic similarity search using Model2Vec embeddings.")
         globs: cli.glob.clone(),
         file_types: cli.file_type.clone(),
         type_not: cli.type_not.clone(),
+        max_count: cli.max_count,
     };
 
     let exit_code = search_paths(&paths, &mode, &config, model.as_ref())?;
