@@ -25,7 +25,7 @@ pub struct Cli {
     pub semantic_threshold: Option<f64>,
 
     /// Model ID or local path for semantic search
-    #[arg(short = 'm', long = "model", default_value = "minishlab/potion-base-8M")]
+    #[arg(short = 'm', long = "model", default_value = "minishlab/potion-code-16M")]
     pub model: String,
 
     /// Treat pattern as a literal string (not regex)

@@ -59,7 +59,7 @@ semanticgrep -s 0.75 "database connection error" src/
 semanticgrep -s 0.5 "memory leak" .
 semanticgrep -s 0.9 "exact match only" file.txt
 
-# Use a different model (default: minishlab/potion-base-8M)
+# Use a different model (default: minishlab/potion-code-16M)
 semanticgrep -s 0.6 -m "minishlab/potion-base-32M" "config issue" .
 
 # Combined with ripgrep flags
@@ -78,7 +78,7 @@ semanticgrep -s 0.7 -C 2 -g "*.py" "import error"
 | Flag | Long | Description |
 |------|------|-------------|
 | `-s <F>` | `--semantic-threshold <F>` | Enable semantic search (threshold 0.0–1.0) |
-| `-m <ID>` | `--model <ID>` | Model ID or local path (default: `minishlab/potion-base-8M`) |
+| `-m <ID>` | `--model <ID>` | Model ID or local path (default: `minishlab/potion-code-16M`) |
 | `-i` | `--ignore-case` | Case-insensitive regex search |
 | `-F` | `--fixed-strings` | Treat pattern as literal string |
 | `-w` | `--word-regexp` | Match only whole words |

@@ -107,11 +107,15 @@ pub fn search_paths(
 
             let walker = walk_builder.build();
 
+            let mut total_candidates = 0usize;
+            let mut matched_globs = 0usize;
+
             for entry in walker.flatten() {
                 let file_path = entry.path();
                 if !file_path.is_file() {
                     continue;
                 }
+                total_candidates += 1;
 
                 if !config.globs.is_empty() {
                     let path_str = file_path.to_string_lossy();
@@ -125,6 +129,7 @@ pub fn search_paths(
                     if !matched {
                         continue;
                     }
+                    matched_globs += 1;
                 }
 
                 let results = search_file(file_path, mode, config, model, &query_embedding)?;
@@ -138,6 +143,14 @@ pub fn search_paths(
                     context_before,
                     context_after,
                 )?;
+            }
+
+            if !config.globs.is_empty() && total_candidates > 0 && matched_globs == 0 {
+                eprintln!(
+                    "warning: glob pattern(s) matched 0 of {} candidate files — \
+                     check your -g argument is a file-name glob, not a search pattern",
+                    total_candidates
+                );
             }
         }
     }
