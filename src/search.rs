@@ -106,7 +106,7 @@ pub fn search_paths(
             )?;
         } else if path.is_dir() {
             let mut walk_builder = WalkBuilder::new(path);
-            walk_builder.git_ignore(true).hidden(false);
+            walk_builder.git_ignore(true).hidden(true);
 
             if let Ok(types_builder) = build_types(&config.file_types, &config.type_not) {
                 if let Ok(types) = types_builder.build() {
