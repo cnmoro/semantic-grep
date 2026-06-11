@@ -52,7 +52,12 @@ jobs:
 
       - name: Install cross-compilation deps (linux arm64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            libc6-dev-arm64-cross
         shell: bash
 
       - name: Set linker for linux arm64
