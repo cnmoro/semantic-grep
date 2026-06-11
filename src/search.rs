@@ -84,7 +84,13 @@ pub fn search_paths(
 
     for path in paths {
         if path.is_file() {
-            let results = search_file(path, mode, config, model, &query_embedding)?;
+            let results = match search_file(path, mode, config, model, &query_embedding) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("warning: skipping {}: {}", path.display(), e);
+                    continue;
+                }
+            };
             any_matches |= print_results(
                 &mut printer,
                 &results,
@@ -132,7 +138,13 @@ pub fn search_paths(
                     matched_globs += 1;
                 }
 
-                let results = search_file(file_path, mode, config, model, &query_embedding)?;
+                let results = match search_file(file_path, mode, config, model, &query_embedding) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        eprintln!("warning: skipping {}: {}", file_path.display(), e);
+                        continue;
+                    }
+                };
                 any_matches |= print_results(
                     &mut printer,
                     &results,
@@ -201,15 +213,46 @@ fn search_file(
                 .as_ref()
                 .expect("query embedding required")
                 .as_ref();
-            let lines = read_lines(path)?;
+            let (lines, orig_indices) = read_nonempty_lines(path)?;
+            if lines.is_empty() {
+                return Ok(Vec::new());
+            }
             let line_embs = model.encode(&lines)?;
-            Ok(match_semantic_lines(
+            let results = match_semantic_lines(
                 &lines,
                 &line_embs,
                 query_emb,
                 *threshold,
-                config.invert_match,
-            ))
+                false,
+            );
+            if config.invert_match {
+                let matched_original: std::collections::HashSet<usize> = results
+                    .iter()
+                    .map(|m| orig_indices[m.line_number - 1])
+                    .collect();
+                let all_lines = read_lines(path)?;
+                Ok(all_lines
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| !matched_original.contains(i))
+                    .map(|(i, line)| SearchMatch {
+                        line_number: i + 1,
+                        line: line.clone(),
+                        column: 1,
+                        similarity: None,
+                    })
+                    .collect())
+            } else {
+                Ok(results
+                    .into_iter()
+                    .map(|m| SearchMatch {
+                        line_number: orig_indices[m.line_number - 1] + 1,
+                        line: m.line,
+                        column: m.column,
+                        similarity: m.similarity,
+                    })
+                    .collect())
+            }
         }
     }
 }
@@ -264,8 +307,24 @@ fn print_results(
 }
 
 fn read_lines(path: &Path) -> Result<Vec<String>> {
-    let content = std::fs::read_to_string(path)?;
-    Ok(content.lines().map(|s| s.to_string()).collect())
+    let content = std::fs::read(path)?;
+    let text = String::from_utf8(content).map_err(|_| {
+        anyhow::anyhow!("file is not valid UTF-8")
+    })?;
+    Ok(text.lines().map(|s| s.to_string()).collect())
+}
+
+fn read_nonempty_lines(path: &Path) -> Result<(Vec<String>, Vec<usize>)> {
+    let lines = read_lines(path)?;
+    let mut kept = Vec::new();
+    let mut indices = Vec::new();
+    for (i, line) in lines.iter().enumerate() {
+        if !line.trim().is_empty() {
+            kept.push(line.clone());
+            indices.push(i);
+        }
+    }
+    Ok((kept, indices))
 }
 
 fn read_lines_for_context(
